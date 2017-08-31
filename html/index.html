@@ -1,0 +1,28 @@
+<html >
+<head>
+    <meta charset="utf-8">
+    <title>Scheduler LOGIN</title>
+</head>
+</body>
+    <div id="appWrapper" style="visibility: hidden;">
+        <div id="app">
+            <div id="login" v-on:keyup.enter="loginUser" v-if="loginVisible">
+                <input v-model="userId" placeholder="user id">
+                <button v-on:click="loginUser">login</button>
+                <button v-on:click="getNewId">new acct</button>
+            </div>
+            <div id="home" v-if="homeVisible">
+                <button>schedule0</button>
+                <button>schedule1</button>
+            </div>
+            <div id="schedule" v-if="scheduleVisible">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue"></script>
+    <script src="js/scheduler.js"></script>
+
+</body>
+</html>
+
