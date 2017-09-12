@@ -2,6 +2,7 @@
 <head>
     <meta charset="utf-8">
     <title>Scheduler LOGIN</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
 </head>
 </body>
     <div id="appWrapper" style="visibility: hidden;">
@@ -12,10 +13,84 @@
                 <button v-on:click="getNewId">new acct</button>
             </div>
             <div id="home" v-if="homeVisible">
-                <button>schedule0</button>
-                <button>schedule1</button>
+                <div>
+                    <span>Hi, </span>
+                    <span id="realNameDisplay" v-if="!editRealName"> {{ realName }} </span>
+                    <span id="realNameInput">
+                        <input  :placeholder="realName"
+                                v-model="realName" 
+                                v-if="editRealName"
+                                v-on:keyup.enter="updateRealName"
+                                >
+                        </span>
+                    <span><button v-on:click="setEditRealName">edit</button></span>
+                    <span><button v-on:click="clearLocalStorage">logout</button></span>
+                </div>
+                <form name="scheduleForm" action="#">
+                    <input
+                        v-model="newScheduleName"
+                        v-on:keyup.enter="addNewSchedule"
+                        :placeholder="addNewScheduleDialog"
+                    >
+                </form>
+                <schedule-listing
+                    v-for="schedule in Schedules"
+                    v-bind:key="schedule.schedid"
+                    v-bind:title="schedule.name"
+                    v-on:edit="editSchedule(schedule)"
+                    v-on:remove="removeSchedule(schedule)"
+                    v-on:goto="gotoSchedule(schedule)"
+                ></schedule-listing>
             </div>
             <div id="schedule" v-if="scheduleVisible">
+                <div> 
+                    <span> {{ displaySchedule.name }} </span>
+                    <button v-on:click="emptySchedule"> return to schedule list </button>
+                </div>
+                <table>
+                    <sched-trh
+                        v-bind:days="Days"
+                    ></sched-trh>
+                    <sched-trd
+                        v-for="t in Times"
+                        v-bind:key="t.time"
+                        v-bind:time="t.time"
+                        v-bind:days="Days"
+                        v-bind:tableid="{ text: 'master' }"
+                    ></sched-trd>
+                </table>
+                <div> 
+                    <button v-on:click="addAvailability">add availability</button>
+                </div>
+                <div class="flexd" v-for="avails in Availabilities"> 
+                    <div class="flex-item">
+                        <div>
+                            {{ realName }}
+                        </div>
+                        <div class="talldiv">
+                            <textarea class="filltextbox"
+                                v-model="textBoxComment"
+                                v-on:keyup.enter="setTextBoxComment"
+                                placeholder="add comment (optional)"
+                            ></textarea>
+                        </div>
+                    </div>
+                    <div class="flex-item">
+                        <table>
+                            <sched-trh
+                                v-bind:days="Days"
+                            ></sched-trh>
+                            <sched-trd
+                                v-for="t in Times"
+                                v-bind:key="t.time"
+                                v-bind:time="t.time"
+                                v-bind:days="Days"
+                                v-bind:tableid="{ text: realName}"
+                            ></sched-trd>
+                        </table>
+
+                    </div>
+                </div>
             </div>
         </div>
     </div>
