@@ -1,155 +1,236 @@
 
-Vue.component('sched-trh', {
-    template: '\
-        <tr>\
-            <th></th>\
-            <sched-th\
-                v-for="day in days"\
-                v-bind:key="day.name"\
-                v-bind:dayname="day.name"\
-            ></sched-th>\
-        </tr>\
-        ',
-    props: [ 'days'],
-    computed: {
-    },
-    methods: {
-    },
-    });
 
-Vue.component('sched-trd', {
-    template: '\
-        <tr>\
-            <td class="small-font">{{ humanTime }}</td>\
-            <sched-td\
-                v-for="day in days"\
-                v-bind:key="day.name"\
-                v-bind:dayname="day.name"\
-                v-bind:time="time"\
-                v-bind:tableid="tableid"\
-            ></sched-td>\
-        </tr>\
-        ',
-    props: ['time', 'days', 'tableid'],
-    computed: {
-        humanTime: function() {
-            var timeStr = (this.time >= 1300) ? 
-                (this.time - 1200).toString() + 'pm' : this.time.toString() + 'am';
-            
-            return timeStr.toString().slice(0,-4) + 
-                    ':' + timeStr.toString().slice(-4);
-        },
-    },
-    methods: {
-    },
-    });
+var Days = [
+                {   name: 'sun'.toUpperCase(),
+                    color: '#7FFF00',
+                    showtimes: 1,
+                },
+                {
+                    name: 'mon'.toUpperCase(),
+                    color: '#DCDCDC',
+                    showtimes: 1,
+                },
+                {
+                    name: 'tue'.toUpperCase(),
+                    color: '#D2691E',
+                    showtimes: 1,
+                },
+                {
+                    name: 'wed'.toUpperCase(),
+                    color: '#FFF8DC',
+                    showtimes: 1,
+                },
+                {
+                    name: 'thu'.toUpperCase(),
+                    color: '#00FFFF',
+                    showtimes: 1,
+                },
+                {
+                    name: 'fri'.toUpperCase(),
+                    color: '#008B8B',
+                    showtimes: 1,
+                },
+                {
+                    name: 'sat'.toUpperCase(),
+                    color: '#8FBC8F',
+                    showtimes: 1,
+                },
+                ];
 
 
-Vue.component('sched-td', {
-    template: '\
-        <td><input-check\
-                v-bind:inputid="inputid"\
-                ></input-check></td>\
-        ',
-    props: ['dayname', 'time', 'tableid'],
-    computed: {
-        inputid: function() {
-            return { tableid: this.tableid, dayname: this.dayname, time: this.time }
-        },
-    },
-    methods: {
-    },
-    });
+var Times = [];
 
-Vue.component('input-check', {
-    template: '\
-        <input type="checkbox" v-model="boolState" v-on:change="emit">\
-        ',
-    props: ['daytime', 'inputid'],
-    data: function() {
-        return { boolState: false }
-    },
-    methods: {
-        emit: function() {
-            console.log("checked " + JSON.stringify(this.inputid) + this.boolState);
-            this.$emit('checked', JSON.stringify(this.inputid) + this.boolState);
+
+String.prototype.isEmpty = function() {
+    return (this.length === 0 || !this.trim());
+};
+
+var resetSchedObj = function(obj, avails) {
+
+    // clear obj and retain pointer
+    Object.keys(obj).forEach(function(key) { delete obj[key]; });
+
+    for (var i=0; i<Times.length; ++i) {
+        obj[Times[i].time] = {};
+        for (var j=0; j<Days.length; ++j) {
+            obj[Times[i].time][Days[j].name] = [];
         }
-    },
+    }
 
-    });
-Vue.component('sched-th', {
-    template: '\
-        <th>{{ dayname }}</th>\
-        ',
-    props: ['dayname'],
-    computed: {
+    for (var i=0; i<avails.length; ++i) {
+        for (var j=0; j<avails[i].data.length; ++j) {
+            var T = avails[i].data[j];
+            obj[T.time][T.day].push(avails[i].name);
+        }
+    }
+
+    console.log("resetSchedObj() " + JSON.stringify(obj));
+};
+
+
+
+var deleteFromArrayByValue = function(ary, value) {
+    ary = ary.filter(function(e) { return e !== value });
+};
+
+var humanTime = function(t) {
+    var timeStr = (t >= 1300) ? 
+        (t - 1200).toString() + 'pm' : t.toString() + 'am';
+    
+    return timeStr.toString().slice(0,-4) + 
+            ':' + timeStr.toString().slice(-4);
+};
+
+Vue.component('avail-name', {
+    template: '<div>' +
+        '<div v-if="!isEditMode">{{ availname }}</div>' +
+        '<input v-model="newname" v-if="isEditMode" ' +
+        '   v-on:keyup.enter="updateName" :placeholder="availname">' +
+        '<button v-if="isowner" v-on:click="isEditMode=1">edit name</button>' +
+        '</div>',
+    props: [ 'availname', 'availid', 'isowner' ],
+    data: function() {
+        return { isEditMode: false, newname: this.availname }
     },
     methods: {
-    },
-    });
-
-
-/*
-Vue.component('timeslot', {
-    template: '\
-        <div class="time-slot">\
-            {{ humanTime }}\
-        </div>\
-        ',
-    props: ['time'],
-    computed: {
-        humanTime: function() {
-            var timeStr = (this.time >= 1300) ? 
-                (this.time - 1200).toString() + 'pm' : this.time.toString() + 'am';
-            
-            return timeStr.toString().slice(0,-4) + 
-                    ':' + timeStr.toString().slice(-4);
+        updateName: function() {
+            console.log("avail-name updateName() %s %s", this.newname, this.availname); 
+            if (!this.newname.isEmpty()) {
+                this.isEditMode = false;
+                this.$emit('editname', { availid: this.availid, name: this.newname } );
+            }
         },
     },
-    methods: {
-    },
     });
-*/
-/*
-Vue.component('day-column', {
+
+Vue.component('master-sched-listing', {
     template: '\
-        <div class="flex-item">\
-            <span> {{ dayname }} </span>\
-            <timeslot\
-                v-if="showtimes"\
-                v-for="t in Times"\
-                v-bind:key="t.time"\
-                v-bind:time="t.time"\
-            ></timeslot>\
-            <div class="talldiv">\
-                <textarea class="filltextbox"\
-                    v-if="!showtimes"\
-                    v-model="textBoxComment"\
-                    v-on:keyup.enter="setTextBoxComment"\
-                    placeholder="add comment (optional)"\
-                \></textarea>\
+        <div v-if="Persons.length">\
+            <div\
+                v-for="person in Persons"\
+                >\
+                <input\
+                    id="person"\
+                    type="checkbox"\
+                    label="person"\
+                    >\
+                <label for="person">{{ person }}</label>\
             </div>\
         </div>\
         ',
+    props: [ 'sched', 'dayname', 'time' ],
     data: function() {
-        T = []
-        for (i=700; i< 2000; i=i+100) {
-            T.push({ time: i });
-            T.push({ time: i+30 });
-        }
-        return { Times : T, textBoxComment : '' };
-
+        return { Persons: this.sched[this.time][this.dayname] };
     },
-    props: ['dayname','showtimes'],
-    methods: {
-        setTextBoxComment: function() {
-            console.log("component.day-column() start");
-            this.$emit('enter', this.textBoxComment);
-            console.log("component.day-column() " + this.textBoxComment);
+    computed: {
+        hasPerson : function() {
+            return (this.Persons.length > 0)
+        }
+    },
+    watch: {
+    },
+    });
+
+Vue.component('sched-table-master', {
+    template: '\
+        <table>\
+            <tr>\
+                <th></th>\
+                <th\
+                    v-for="d in days"\
+                    > {{ d.name }} </th>\
+                </tr>\
+            <tr\
+                v-for="t in times"\
+                >   <td>{{ t.humanTime }}</td>\
+                    <td\
+                    v-for="d in days"\
+                    >\
+                        <master-sched-listing\
+                        :sched="mastersched"\
+                        :dayname="d.name"\
+                        :time="t.time"\
+                        ></master-sched-listing>\
+                        </td>\
+                </tr>\
+            <!--\
+            <tr>\
+                <td colspan="8">\
+                    <p>\
+                {{ availabilities }}\
+                    </p>\
+                    <p>\
+                {{ JSON.stringify(mastersched) }}\
+                    </p>\
+                </td>\
+            </tr>\
+            -->\
+        </table>\
+        ',
+    props: [ 'days', 'times', 'availabilities' ],
+    data: {
+    },
+    computed: {
+        mastersched: function() {
+            var obj = {};
+            resetSchedObj(obj, this.availabilities);
+            return obj;
         },
     },
     });
-*/
+
+
+Vue.component('sched-table-worker', {
+    template: '\
+        <table>\
+            <tr>\
+                <th></th>\
+                <th\
+                    v-for="d in days"\
+                    > {{ d.name }} </th>\
+                </tr>\
+            <tr\
+                v-for="t in times"\
+                >   <td>{{ t.humanTime }}</td>\
+                    <td\
+                    v-for="d2 in days"\
+                    >\
+                        <label class="checkbox">\
+                            <input\
+                                :value="{ day: d2.name, time: t.time}"\
+                                checked="savedchecks.indexOf({time: t.time, day: d2.name})"\
+                                type="checkbox"\
+                                v-model=checks\
+                                v-on:change="emitchecked"\
+                                :disabled="isnotowner"\
+                                >\
+                            <span></span>\
+                            </label>\
+                        </td>\
+                </tr>\
+            <!--\
+            -->\
+            <tr>\
+                <!--\
+                <td colspan="8">{{ JSON.stringify(checks) }}</td>\
+                -->\
+                {{ isnotowner }}\
+            </tr>\
+            <!--\
+            -->\
+        </table>\
+        ',
+    props: [ 'days', 'times', 'tablename', 'tableid', 'savedchecks', 'isnotowner' ],
+    data: function() {
+        return { checks: this.savedchecks }
+    },
+    methods: {
+        emitchecked : function(event) {
+            this.$emit('emitchecked', { tableid: this.tableid.text, checks: this.checks} );
+        },
+    },
+    });
+
 
 Vue.component('schedule-listing', {
     template: '\
@@ -157,9 +238,10 @@ Vue.component('schedule-listing', {
             <span class="schedule" v-on:click="goto_"> {{ title }} </span>\
             <button v-on:click="edit_">edit</button>\
             <button v-on:click="remove_">remove</button>\
+            <span>SHARE: {{ schedid }}</span>\
         </div>\
         ',
-    props: ['title'],
+    props: ['title', 'schedid'],
     methods: {
         goto_ : function() {
             this.$emit('goto');
@@ -201,63 +283,34 @@ var app = new Vue({
         userValid: false,
         realName: 'DEFAULT_USER_NAME',
         newScheduleName: '',
-        displayScheduleName: {
+        existingScheduleId: '',
+        displaySchedule: {
             id: false,
             name: false,
         },
         editRealName: false,
         addNewScheduleDialog: 'add a new schedule',
+        addExistingScheduleDialog: 'add existing schedule',
+        ScheduleInfo: { isOwner: false },
         textBoxComment: '',
         Schedules: [],
         Availabilities: [],
+        MasterSched: {}, 
         CheckedBoxes: [],
-        //Days: ['sun','mon','tue','wed','thu','fri','sat'],
-
-        
-        Days: [
-                {   name: 'sun'.toUpperCase(),
-                    color: '#7FFF00',
-                    showtimes: 1,
-                },
-                {
-                    name: 'mon'.toUpperCase(),
-                    color: '#DCDCDC',
-                    showtimes: 1,
-                },
-                {
-                    name: 'tue'.toUpperCase(),
-                    color: '#D2691E',
-                    showtimes: 1,
-                },
-                {
-                    name: 'wed'.toUpperCase(),
-                    color: '#FFF8DC',
-                    showtimes: 1,
-                },
-                {
-                    name: 'thu'.toUpperCase(),
-                    color: '#00FFFF',
-                    showtimes: 1,
-                },
-                {
-                    name: 'fri'.toUpperCase(),
-                    color: '#008B8B',
-                    showtimes: 1,
-                },
-                {
-                    name: 'sat'.toUpperCase(),
-                    color: '#8FBC8F',
-                    showtimes: 1,
-                },
-                ],
-
-
-        Times: [],
+        Days: Days,
+        Times: Times,
 
     },
     computed: {
         DaysIndented: function() {
-            return [{ name: this.realName, color: '#FFFFFF', showtimes: 0}].concat(this.Days);
+            return [{ name: this.realName, color: '#FFFFFF', showtimes: 0}].concat(Days);
+        },
+        AvailsIdToIdx: function() {
+            var T = {};
+            for (var i=0; i<this.Availabilities.length; ++i) {
+                T[this.Availabilities[i].availid] = i;
+            }
+            return T;
         },
     },
 
@@ -267,7 +320,7 @@ var app = new Vue({
         //
         isUserIdValid: function() {
             console.log("isUserIdValid() start");
-            httpGet('http://127.0.0.1:5000/validateUser?id=' + this.userId,
+            httpGet('http://127.0.0.1:5000/validateUser?userid=' + this.userId,
                 this.setUserValid
                 );
         },
@@ -327,7 +380,7 @@ var app = new Vue({
         removeSchedule: function(sched) {
             console.log("removeSchedule() " + sched.schedid);
             httpGet('http://127.0.0.1:5000/rmSchedule?schedid=' + 
-                sched.schedid + '&id=' + this.userId, 
+                sched.schedid + '&userid=' + this.userId, 
                 this.updateSchedules);
 
         },
@@ -337,16 +390,32 @@ var app = new Vue({
         },
 
         gotoSchedule: function(sched) {
-            console.log("gotoSchedule() " + sched);
+            console.log("gotoSchedule() " + JSON.stringify(sched));
+
+            httpGet('http://127.0.0.1:5000/getScheduleInfo?schedid=' + 
+                sched.schedid + '&userid=' + this.userId, 
+                this.updateScheduleInfo);
+
             this.displaySchedule = sched;
             this.loginVisible = false;
             this.homeVisible = false;
             this.scheduleVisible = true;
         },
 
+        updateScheduleInfo: function(data) {
+            data = JSON.parse(data);
+            console.log("updateScheduleInfo() %s", JSON.stringify(data));
+            if (!data) {
+                alert("schedule not found, please remove from your list");
+            } else {
+                this.ScheduleInfo = data;
+                this.Availabilities = this.ScheduleInfo['avails'];
+            }
+        },
+
         emptySchedule: function() {
             console.log("emptySchedule()");
-            this.displayScheduleName = false;
+            this.displaySchedule = false;
             this.loginVisible = false;
             this.homeVisible = true;
             this.scheduleVisible = false;
@@ -354,23 +423,32 @@ var app = new Vue({
 
         addNewSchedule: function() {
             console.log("addNewSchedule() " + this.newScheduleName);
-            httpGet('http://127.0.0.1:5000/addSchedule?name=' + 
-                this.newScheduleName + '&id=' + this.userId, 
+            httpGet('http://127.0.0.1:5000/addNewSchedule?name=' + 
+                this.newScheduleName + '&userid=' + this.userId, 
                 this.updateSchedules);
             document.activeElement.blur();
             this.newScheduleName = '';
         },
 
+        addExistingSchedule: function() {
+            console.log("addExistingSchedule() " + this.existingScheduleId);
+            httpGet('http://127.0.0.1:5000/addExistingSchedule?schedid=' + 
+                this.existingScheduleId + '&userid=' + this.userId, 
+                this.updateSchedules);
+            document.activeElement.blur();
+            this.existingScheduleId = '';
+        },
+
+
         updateSchedules: function() {
             console.log("updateSchedules()");
-            httpGet('http://127.0.0.1:5000/getSchedules?id=' + this.userId,
+            httpGet('http://127.0.0.1:5000/getSchedules?userid=' + this.userId,
                 this.setSchedules);
         },
         
         setSchedules: function(data) {
-            console.log("setSchedules() " + data);
             data = JSON.parse(data);
-            console.log("setSchedules() " + data);
+            console.log("setSchedules() " + JSON.stringify(data));
             this.Schedules = [];
             for (var i = 0; i < data.length; ++i) {
                 this.Schedules.push({ 
@@ -391,7 +469,7 @@ var app = new Vue({
             console.log("updateRealName() start");
             this.editRealName = false; 
             httpGet('http://127.0.0.1:5000/updateRealName?name=' + 
-                this.realName+ '&id=' + this.userId, this.updateRealNameCallback);
+                this.realName+ '&userid=' + this.userId, this.updateRealNameCallback);
         },
         
         updateRealNameCallback: function(foo) {
@@ -412,6 +490,7 @@ var app = new Vue({
         tebow: function(comment) {
             console.log("tebow() " + comment);
         },
+
         //
         // methods HOMEPAGE end
         //
@@ -420,12 +499,121 @@ var app = new Vue({
         // methods SCHEDULE start
         //
 
-        addAvailability: function() {
-            console.log("addAvailability() start");
-            this.Availabilities.push({});
-        }
+        addNewAvailability: function() {
+            console.log("addNewAvailability() start");
+
+            httpGet('http://127.0.0.1:5000/addNewAvailability?userid=' + this.userId +
+                '&schedid=' + this.displaySchedule.schedid,
+                this.updateAvailabilities);
+        },
+    
+        updateAvailabilities: function(avails) {
+            avails = JSON.parse(avails);
+            console.log("updateAvailabilities() new availid: %s", JSON.stringify(avails));
+            this.Availabilities = avails;
+        },
+
+        tellChecked: function(obj) {
+            console.log("tellChecked() start " + JSON.stringify(obj.checks) );
+            console.log("tellChecked() start " + JSON.stringify(this.Availabilities) );
+
+            if (obj.tableid in this.AvailsIdToIdx) {
+                var T = this.Availabilities[this.AvailsIdToIdx[obj.tableid]];
+                T.data = obj.checks;
+                console.log("tellChecked() updated " + JSON.stringify(T));
+            } else {
+                alert("Could not find " + obj.tableid);
+            }
+        },
+    
+        saveAvailability: function(event) {
+            console.log("saveAvailability() %s", JSON.stringify(event.target.name));
+            console.log("saveAvailability() %s", JSON.stringify(event.target.id));
+            if (event.target.id in this.AvailsIdToIdx) {
+                var T = this.Availabilities[this.AvailsIdToIdx[event.target.id]].data;
+                console.log("saveAvailability() %s", JSON.stringify(T));
+                httpGet('http://127.0.0.1:5000/saveAvail?availid=' + 
+                    event.target.id + '&userid=' + this.userId + '&data=' + JSON.stringify(T), 
+                    this.saveAvailabilityCB);
+            } else {
+                alert("Could not find " + event.target.name);
+            }
+        },
+
+        saveAvailabilityCB: function(data) {
+            console.log("saveAvailabilityCB() " + data);
+        },
+
+        removeAvailability: function(event) {
+            console.log("removeAvailability() %s", JSON.stringify(event.target.name));
+            console.log("removeAvailability() %s", JSON.stringify(event.target.id));
+            console.log("removeAvailability() %s", JSON.stringify(this.Availabilities));
+            this.Availabilities = this.Availabilities.filter(function(e) {
+                return e.availid !== event.target.id
+            });
+            console.log("removeAvailability() %s", JSON.stringify(this.Availabilities));
+
+            httpGet('http://127.0.0.1:5000/rmAvail?availid=' + 
+                event.target.id + '&userid=' + this.userId + '&schedid=' + this.displaySchedule.schedid,
+                this.removeAvailabilityCB);
+        },
+    
+        removeAvailabilityCB: function(data) {
+            console.log("removeAvailabilityCB() %s", data);
+        },
+
+        updateAvailName: function(obj) {
+            console.log("updateAvailName() " + JSON.stringify(obj));
+            
+            for (var i=0; i<this.Availabilities.length; ++i) {
+                if (this.Availabilities[i].availid === obj.availid) {
+                    this.Availabilities[i].name = obj.name
+                }
+            }
+
+            httpGet('http://127.0.0.1:5000/updateAvailName?availid=' + 
+                obj.availid + '&userid=' + this.userId + '&name=' + obj.name, 
+                this.updateAvailNameCB);
+        },
+    
+        updateAvailNameCB: function(data) {
+            console.log("updateAvailNameCB() " + data);
+        },
+
         //
         // methods SCHEDULE end
+        //
+
+        //
+        // methods GENERAL start
+        //
+
+        initMasterSchedObj: function() {
+            this.MasterSched = {};
+            for (var i=0; i<Times.length; ++i) {
+                this.MasterSched[Times[i].time] = {};
+                for (var j=0; j<Days.length; ++j) {
+                    this.MasterSched[Times[i].time][Days[j].name] = [];
+                }
+            }
+            //console.log(JSON.stringify(this.MasterSched));
+        },
+
+        emptyMasterSchedObj: function() {
+            for (var i=0; i<Times.length; ++i) {
+                for (var j=0; j<Days.length; ++j) {
+                    var a = this.MasterSched[Times[i].time][Days[j].name];
+                    while (a.length > 0) {
+                        a.pop();
+                    }
+                }
+            }
+            //console.log(JSON.stringify(this.MasterSched));
+        },
+
+
+        //
+        // methods GENERAL end
         //
     },
 
@@ -434,6 +622,9 @@ var app = new Vue({
         // components HOMEPAGE start
         //
 
+    },
+
+    watch: {
     },
 
 
@@ -462,9 +653,11 @@ var app = new Vue({
 
 
         for (i=700; i< 2000; i=i+100) {
-            this.Times.push({ time: i });
-            this.Times.push({ time: i+30 });
+            Times.push({ time: i,    humanTime: humanTime(i)});
+            Times.push({ time: i+30, humanTime: humanTime(i+30)});
         }
+
+        this.initMasterSchedObj();
 
     },
 
@@ -481,3 +674,5 @@ var foo = new Vue({
         console.log('mounted');
     },
 });
+
+

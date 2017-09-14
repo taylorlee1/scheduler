@@ -25,17 +25,30 @@
                         </span>
                     <span><button v-on:click="setEditRealName">edit</button></span>
                     <span><button v-on:click="clearLocalStorage">logout</button></span>
+                    <span>SECRET(for login): {{ userId }}</span>
                 </div>
+                <p>
+                </p>
                 <form name="scheduleForm" action="#">
-                    <input
-                        v-model="newScheduleName"
-                        v-on:keyup.enter="addNewSchedule"
-                        :placeholder="addNewScheduleDialog"
-                    >
+                    <div>
+                        <input
+                            v-model="newScheduleName"
+                            v-on:keyup.enter="addNewSchedule"
+                            :placeholder="addNewScheduleDialog"
+                        > HIT ENTER TO SUBMIT
+                    </div>
+                    <div>
+                        <input
+                            v-model="existingScheduleId"
+                            v-on:keyup.enter="addExistingSchedule"
+                            :placeholder="addExistingScheduleDialog"
+                        > HIT ENTER TO SUBMIT
+                    </div>
                 </form>
                 <schedule-listing
                     v-for="schedule in Schedules"
                     v-bind:key="schedule.schedid"
+                    v-bind:schedid="schedule.schedid"
                     v-bind:title="schedule.name"
                     v-on:edit="editSchedule(schedule)"
                     v-on:remove="removeSchedule(schedule)"
@@ -47,26 +60,30 @@
                     <span> {{ displaySchedule.name }} </span>
                     <button v-on:click="emptySchedule"> return to schedule list </button>
                 </div>
-                <table>
-                    <sched-trh
+                    <h3
+                        v-if="ScheduleInfo.isOwner"
+                        > Schedule Owner View </h3>
+                    <h3
+                        v-else
+                        > Schedule Contributor View </h3>
+                    <sched-table-master
+                        v-if="ScheduleInfo.isOwner"
                         v-bind:days="Days"
-                    ></sched-trh>
-                    <sched-trd
-                        v-for="t in Times"
-                        v-bind:key="t.time"
-                        v-bind:time="t.time"
-                        v-bind:days="Days"
-                        v-bind:tableid="{ text: 'master' }"
-                    ></sched-trd>
-                </table>
+                        v-bind:times="Times"
+                        v-bind:availabilities="Availabilities"
+                        v-bind:tablename="{ text: 'master' }"
+                        ></sched-table-master>
                 <div> 
-                    <button v-on:click="addAvailability">add availability</button>
+                    <button v-on:click="addNewAvailability">add availability</button>
                 </div>
-                <div class="flexd" v-for="avails in Availabilities"> 
-                    <div class="flex-item">
-                        <div>
-                            {{ realName }}
-                        </div>
+                <div class="flexd" v-for="avail in Availabilities">
+                    <div class="left-column">
+                        <avail-name
+                            :availname="avail.name"
+                            :availId="avail.availid"
+                            :isowner="avail.owner === userId"
+                            v-on:editname="updateAvailName"
+                        ></avail-name>
                         <div class="talldiv">
                             <textarea class="filltextbox"
                                 v-model="textBoxComment"
@@ -75,20 +92,37 @@
                             ></textarea>
                         </div>
                     </div>
-                    <div class="flex-item">
-                        <table>
-                            <sched-trh
-                                v-bind:days="Days"
-                            ></sched-trh>
-                            <sched-trd
-                                v-for="t in Times"
-                                v-bind:key="t.time"
-                                v-bind:time="t.time"
-                                v-bind:days="Days"
-                                v-bind:tableid="{ text: realName}"
-                            ></sched-trd>
-                        </table>
 
+                    <!--<div class="flex-item">
+                    -->
+                    <div>
+                        <span>
+                            <sched-table-worker
+                                v-bind:days="Days"
+                                v-bind:times="Times"
+                                v-bind:tablename="{ text: avail.name }"
+                                v-bind:tableid="{ text: avail.availid }"
+                                v-on:emitchecked="tellChecked"
+                                :savedchecks="avail.data"
+                                :isnotowner="avail.owner !== userId"
+                                ></sched-table-worker>
+                        </span>
+                    </div>
+                    <div>
+                        <div>
+                            <button 
+                                :id=avail.availid
+                                :name=avail.name
+                                v-on:click="saveAvailability"
+                                v-if="avail.owner === userId">save</button>
+                        </div>
+                        <div>
+                            <button
+                                :id=avail.availid
+                                :name=avail.name
+                                v-on:click="removeAvailability"
+                                v-if="avail.owner === userId">delete {{ avail.name }}</button>
+                        </div>
                     </div>
                 </div>
             </div>
