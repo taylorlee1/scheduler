@@ -9,3 +9,5 @@ Once the user logs in, they can create a new schedule or add an existing schedul
 Both owners of a schedule or contributors of a schedule can create Availabilities (see pictures below). Only the owner of an Availability can edit/delete the Availability. I need to enhance this to allow owners to delete availabilities.
 
 Owners of the schedule will see a table of all the aggregated Availabilities and can use the checkbox inputs to mark which workers can work in which timeslots.
+
+Please see the Wiki for screenshots of the application.
